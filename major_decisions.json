@@ -5,5 +5,26 @@
         "decision": "Use Node.js for Control Plane and Llama.cpp for Data Plane",
         "context": "User wants to learn AI engineering with Node.js while leveraging high-performance C++ inference.",
         "status": "Accepted"
+    },
+    {
+        "id": "002",
+        "date": "2025-11-22",
+        "decision": "Adopt TypeScript and Service Layer Pattern",
+        "context": "Refactored server.js to server.ts and created LlamaService.ts to decouple business logic from the HTTP/Socket layer.",
+        "status": "Implemented"
+    },
+    {
+        "id": "003",
+        "date": "2025-11-22",
+        "decision": "Switch to ESM (ECMAScript Modules)",
+        "context": "Required by `node-llama-cpp`. Updated package.json type to 'module' and tsconfig to 'NodeNext'.",
+        "status": "Implemented"
+    },
+    {
+        "id": "004",
+        "date": "2025-11-22",
+        "decision": "Integrate Multi-Turn Chatbot with Layered Architecture",
+        "context": "Connected LlamaService.ts (service layer) with server.ts (API layer) and index.html (UI layer) using Socket.io for real-time async communication. Model output trimmed to remove leading newlines. Server runs on port 8000.",
+        "status": "Implemented"
     }
 ]

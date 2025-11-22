@@ -1,34 +1,160 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Simple Chat App</title>
+    <title>Llama Chat App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      #status {
+        text-align: center;
+        margin-bottom: 10px;
+        padding: 5px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      #status.connected {
+        background: #d4edda;
+        color: #155724;
+      }
+      #status.disconnected {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      #messages {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: white;
+      }
+      .message {
+        padding: 10px 15px;
+        margin: 8px 0;
+        border-radius: 12px;
+        max-width: 80%;
+        word-wrap: break-word;
+      }
+      .user {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+      }
+      .ai {
+        background: #e9ecef;
+        color: #333;
+        margin-right: auto;
+      }
+      #typing {
+        color: #666;
+        font-style: italic;
+        padding: 5px 15px;
+        display: none;
+      }
+      #input-area {
+        display: flex;
+        gap: 10px;
+      }
+      #message-input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      #message-input:focus {
+        outline: none;
+        border-color: #007bff;
+      }
+      #send-button {
+        padding: 12px 24px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      #send-button:hover {
+        background: #0056b3;
+      }
+      #send-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
   </head>
   <body>
-    <h1>Simple Chat App</h1>
+    <h1>🦙 Llama Chat App</h1>
+    <div id="status" class="disconnected">Connecting...</div>
     <div id="messages"></div>
-    <input id="message-input" type="text" placeholder="Type your message here">
-    <button id="send-button">Send</button>
+    <div id="typing">AI is thinking...</div>
+    <div id="input-area">
+      <input id="message-input" type="text" placeholder="Type your message...">
+      <button id="send-button">Send</button>
+    </div>
+    
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
-      socket.on('connect', () => {
-        console.log('Connected to server');
-      });
-      socket.on('disconnect', () => {
-        console.log('Disconnected from server');
-      });
       const messages = document.getElementById('messages');
       const messageInput = document.getElementById('message-input');
       const sendButton = document.getElementById('send-button');
-      sendButton.addEventListener('click', () => {
-        const message = messageInput.value;
-        socket.emit('message', message);
-        messageInput.value = '';
+      const typing = document.getElementById('typing');
+      const status = document.getElementById('status');
+      
+      socket.on('connect', () => {
+        status.textContent = 'Connected to server';
+        status.className = 'connected';
+        console.log('Connected to server');
       });
-      socket.on('message', (message) => {
-        const messageElement = document.createElement('div');
-        messageElement.innerText = message;
-        messages.appendChild(messageElement);
+      
+      socket.on('disconnect', () => {
+        status.textContent = 'Disconnected from server';
+        status.className = 'disconnected';
+        console.log('Disconnected from server');
+      });
+      
+      socket.on('message', (data) => {
+        const div = document.createElement('div');
+        div.className = `message ${data.sender}`;
+        div.textContent = data.text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      });
+      
+      socket.on('typing', (isTyping) => {
+        typing.style.display = isTyping ? 'block' : 'none';
+        if (isTyping) {
+          messages.scrollTop = messages.scrollHeight;
+        }
+      });
+      
+      function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+          socket.emit('message', message);
+          messageInput.value = '';
+        }
+      }
+      
+      sendButton.addEventListener('click', sendMessage);
+      
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendMessage();
+        }
       });
     </script>
   </body>
