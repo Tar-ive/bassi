@@ -1,0 +1,9 @@
+[
+    {
+        "id": "001",
+        "date": "2025-11-21",
+        "decision": "Use Node.js for Control Plane and Llama.cpp for Data Plane",
+        "context": "User wants to learn AI engineering with Node.js while leveraging high-performance C++ inference.",
+        "status": "Accepted"
+    }
+]
