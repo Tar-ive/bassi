@@ -4,27 +4,81 @@
         "date": "2025-11-21",
         "decision": "Use Node.js for Control Plane and Llama.cpp for Data Plane",
         "context": "User wants to learn AI engineering with Node.js while leveraging high-performance C++ inference.",
-        "status": "Accepted"
+        "status": "Accepted",
+        "commit": "d7ff2851134df5b6fa422bd86c04c82590d3ef06"
     },
     {
         "id": "002",
         "date": "2025-11-22",
         "decision": "Adopt TypeScript and Service Layer Pattern",
         "context": "Refactored server.js to server.ts and created LlamaService.ts to decouple business logic from the HTTP/Socket layer.",
-        "status": "Implemented"
+        "status": "Implemented",
+        "commit": "d7ff2851134df5b6fa422bd86c04c82590d3ef06"
     },
     {
         "id": "003",
         "date": "2025-11-22",
         "decision": "Switch to ESM (ECMAScript Modules)",
         "context": "Required by `node-llama-cpp`. Updated package.json type to 'module' and tsconfig to 'NodeNext'.",
-        "status": "Implemented"
+        "status": "Implemented",
+        "commit": "d7ff2851134df5b6fa422bd86c04c82590d3ef06"
     },
     {
         "id": "004",
         "date": "2025-11-22",
         "decision": "Integrate Multi-Turn Chatbot with Layered Architecture",
         "context": "Connected LlamaService.ts (service layer) with server.ts (API layer) and index.html (UI layer) using Socket.io for real-time async communication. Model output trimmed to remove leading newlines. Server runs on port 8000.",
+        "status": "Implemented",
+        "commit": "d6e59f1b9c345499a8585e49b05706fc8786490f"
+    },
+    {
+        "id": "005",
+        "date": "2025-11-22",
+        "decision": "Three-Layer Architecture",
+        "context": "System uses UI Layer (index.html), API Layer (server.ts :8000), and Service Layer (LlamaService.ts) with clear separation of concerns.",
+        "status": "Implemented",
+        "commit": "d6e59f1b9c345499a8585e49b05706fc8786490f"
+    },
+    {
+        "id": "006",
+        "date": "2025-11-22",
+        "decision": "Hybrid Intent Routing System",
+        "context": "IntentRouter uses two-layer classification: Layer 1 (keyword search) + Layer 2 (vector verification with cosine similarity). Handlers: keyword-confirmed, semantic-only, fallback.",
+        "status": "Implemented"
+    },
+    {
+        "id": "007",
+        "date": "2025-11-22",
+        "decision": "JSON Lines Logging with Request Tracing",
+        "context": "Structured logging format with SessionID (per connection) and RequestID (per message) for distributed tracing. Categories: APP, SYS, AI, API.",
+        "status": "Implemented"
+    },
+    {
+        "id": "008",
+        "date": "2025-11-22",
+        "decision": "Cosine Similarity for Confidence Scoring",
+        "context": "Intent confidence calculated as cosine similarity between query embedding and nearest prototype embedding. Range: 0.0-1.0. Threshold: 0.7 for fallback.",
+        "status": "Implemented"
+    },
+    {
+        "id": "009",
+        "date": "2025-11-22",
+        "decision": "Prototype Embeddings for Intent Classification",
+        "context": "Anchor sentences define semantic clusters for each intent (legal, coding, general). Uses Xenova/all-MiniLM-L6-v2 for embeddings.",
+        "status": "Implemented"
+    },
+    {
+        "id": "010",
+        "date": "2025-11-23",
+        "decision": "Fix Server Startup Issues and Modernize ESM Loading",
+        "context": "Resolved EADDRINUSE port conflict by killing conflicting Node.js process. Updated package.json to use modern --import flag instead of deprecated --loader, created register.js for proper TypeScript ESM loading, eliminating experimental-loader warnings.",
+        "status": "Implemented"
+    },
+    {
+        "id": "011",
+        "date": "2025-11-23",
+        "decision": "Implement Phase 2: Intent Router & Unified Logging",
+        "context": "Completed implementation of IntentRouter (Hybrid Logic: Keyword + Vector), Logger (JSON, SessionID, Thinking Tags), and integrated them into server.ts. Added performance instrumentation (E2E latency, TTFT) and UX fixes (try-finally for typing indicator).",
         "status": "Implemented"
     }
 ]
