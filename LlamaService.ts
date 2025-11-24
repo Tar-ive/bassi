@@ -27,7 +27,7 @@ export class LlamaService {
         logger.info('SYS', 'LlamaService initialized');
     }
 
-    async chat(message: string, requestId?: string): Promise<string> {
+    async chat(message: string, requestId?: string, maxTokens: number = 100): Promise<string> {
         if (!this.session) {
             throw new Error("LlamaService not initialized");
         }
@@ -36,10 +36,12 @@ export class LlamaService {
         logger.info('AI', 'Sending prompt to model', {
             requestId,
             input_length: message.length,
-            input_preview: message.substring(0, 100)
+            input_preview: message.substring(0, 100),
+            max_tokens: maxTokens
         });
         
         const t0 = performance.now();
+        // Note: maxTokens parameter temporarily disabled - investigating node-llama-cpp API
         const response = await this.session.prompt(message);
         const t1 = performance.now();
         

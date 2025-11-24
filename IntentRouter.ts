@@ -18,18 +18,27 @@ export interface RouterResponse {
 export class IntentRouter {
     private classifier: any = null;
 
-    // Keyword Scenarios from Plan
+    // Expanded Keyword Map (added sue, defamation, court, jurisdiction, python, code, script)
     private keywordMap: Record<string, string> = {
+        // Legal domain
         "contract": "legal",
         "motion": "legal",
         "lawsuit": "legal",
         "litigation": "legal",
         "plaintiff": "legal",
         "defendant": "legal",
+        "sue": "legal",
+        "defamation": "legal",
+        "court": "legal",
+        "jurisdiction": "legal",
+        // Coding domain
         "function": "coding",
         "debug": "coding",
         "api": "coding",
-        "sql": "coding"
+        "sql": "coding",
+        "python": "coding",
+        "code": "coding",
+        "script": "coding"
     };
 
     // Prototypes from Plan
@@ -61,6 +70,9 @@ export class IntentRouter {
     };
 
     private prototypeEmbeddings: Record<string, any[]> = {};
+    
+    // Alpha parameter for convex scaling (30% dense, 70% sparse)
+    private alpha: number = 0.3;
 
     constructor() { }
 
@@ -91,9 +103,9 @@ export class IntentRouter {
     async route(text: string, requestId: string): Promise<RouterResponse> {
         const t_start = performance.now();
 
-        // Layer 1: Keyword Search
+        // Layer 1: Keyword Search (Multi-keyword detection)
         const t0 = performance.now();
-        const keywordIntent = this.checkKeywords(text);
+        const keywordMatches = this.checkKeywordsMulti(text);
         const t1 = performance.now();
 
         // Layer 2: Embedding Computation
@@ -101,37 +113,48 @@ export class IntentRouter {
         const queryEmbedding = output.data;
         const t2 = performance.now();
 
-        // Layer 3: Similarity Computation
-        const { bestIntent: vectorIntent, maxScore: vectorScore } = this.computeBestMatch(queryEmbedding);
+        // Layer 3a: Dense Similarity Computation
+        const { bestIntent: denseIntent, maxScore: denseScore } = this.computeBestMatch(queryEmbedding);
+        
+        // Layer 3b: Sparse Score Computation (keyword-based)
+        const sparseScores = this.computeKeywordScores(keywordMatches);
+        const sparseIntent = Object.entries(sparseScores).reduce((max, [intent, score]) => 
+            score > sparseScores[max] ? intent : max, 'general');
+        const sparseScore = sparseScores[sparseIntent];
+        
         const t3 = performance.now();
 
-        // Hybrid Logic Decision
-        let finalIntent = vectorIntent;
-        let confidence = vectorScore;
+        // Hybrid Logic: Convex Scaling Fusion
+        let finalIntent = denseIntent;
+        let confidence = denseScore;
         let handler = "semantic-only";
 
-        if (keywordIntent) {
-            if (keywordIntent === vectorIntent && vectorScore > 0.6) {
-                confidence = 1.0;
-                handler = "keyword-confirmed";
-            } else if (vectorScore < 0.4) {
-                // False positive keyword, trust vector (even if low) or fallback
-                confidence = vectorScore;
-                handler = "semantic-only";
-            } else {
-                // Ambiguous - default to vector
-                confidence = vectorScore;
-                handler = "semantic-only";
-            }
+        if (denseIntent === sparseIntent) {
+            // Both agree - use weighted combination
+            confidence = this.alpha * denseScore + (1 - this.alpha) * sparseScore;
+            finalIntent = denseIntent;
+            handler = "hybrid-consensus";
+        } else if (keywordMatches.length > 0 && keywordMatches[0].intent === denseIntent) {
+            // Keyword confirms dense intent
+            confidence = 0.5 * denseScore + 0.5 * keywordMatches[0].score;
+            finalIntent = denseIntent;
+            handler = "keyword-dense-confirm";
+        } else {
+            // Disagreement - use weighted combination, choose higher scorer
+            confidence = this.alpha * denseScore + (1 - this.alpha) * sparseScore;
+            finalIntent = denseScore > sparseScore ? denseIntent : sparseIntent;
+            handler = "weighted-choice";
         }
 
-        // Fallback Check
-        if (confidence < 0.7 && handler !== "keyword-confirmed") {
+        // Fallback Check (threshold 0.5)
+        if (confidence < 0.5) {
             logger.warn('API', 'Fallback triggered', {
                 requestId,
                 query: text,
                 top_intent: finalIntent,
-                top_score: confidence
+                dense_score: denseScore,
+                sparse_score: sparseScore,
+                final_confidence: confidence
             });
             handler = "fallback";
             finalIntent = "general";
@@ -175,6 +198,47 @@ export class IntentRouter {
             }
         }
         return null;
+    }
+
+    private checkKeywordsMulti(text: string): Array<{ keyword: string; intent: string; score: number }> {
+        const lower = text.toLowerCase();
+        const matches: Array<{ keyword: string; intent: string; score: number }> = [];
+        
+        for (const [keyword, intent] of Object.entries(this.keywordMap)) {
+            if (lower.includes(keyword)) {
+                // Fixed score per keyword (simplified vs full BM25)
+                matches.push({ keyword, intent, score: 0.8 });
+            }
+        }
+        
+        return matches;
+    }
+
+    private computeKeywordScores(matches: Array<{ keyword: string; intent: string; score: number }>): Record<string, number> {
+        const scores: Record<string, number> = {
+            legal: 0,
+            coding: 0,
+            general: 0
+        };
+
+        if (matches.length === 0) {
+            return scores;
+        }
+
+        // Aggregate scores by intent
+        for (const match of matches) {
+            scores[match.intent] += match.score;
+        }
+
+        // Normalize to 0-1 range
+        const maxScore = Math.max(...Object.values(scores));
+        if (maxScore > 0) {
+            for (const intent in scores) {
+                scores[intent] = scores[intent] / maxScore;
+            }
+        }
+
+        return scores;
     }
 
     private computeBestMatch(queryEmbedding: any): { bestIntent: string, maxScore: number } {

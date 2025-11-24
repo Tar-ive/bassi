@@ -1,0 +1,19 @@
+[project]
+name = "intent-router-comparison"
+version = "0.1.0"
+description = "Compare intent routing approaches with llama.cpp"
+requires-python = ">=3.10"
+dependencies = [
+    "sentence-transformers>=2.2.0",
+    "llama-cpp-python>=0.2.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+semantic = [
+    "semantic-router>=0.0.30",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
